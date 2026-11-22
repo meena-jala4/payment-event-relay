@@ -1,0 +1,25 @@
+server:
+  port: 18089   # fixed so the fraud client (inside the app) can reach the stub (also inside the app)
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:relaytest;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+
+relay:
+  outbox-poll-interval: 50ms
+  delivery-poll-interval: 50ms
+  max-delivery-attempts: 3
+  initial-backoff: 50ms
+  max-backoff: 200ms
+
+fraud:
+  provider:
+    base-url: http://localhost:18089
+    read-timeout: 1s
+  stub:
+    enabled: true
+    failure-rate: 0.0
+    slow-rate: 0.0
+
+simulation:
+  enabled: true
