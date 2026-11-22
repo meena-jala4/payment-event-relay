@@ -1,0 +1,69 @@
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+
+spring:
+  application:
+    name: payment-event-relay
+  datasource:
+    # Default: embedded, file-backed H2 so `./mvnw spring-boot:run` needs nothing else installed.
+    # Dev/prod override DB_URL / DB_USERNAME / DB_PASSWORD to point at PostgreSQL.
+    url: ${DB_URL:jdbc:h2:file:./data/payments;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none        # Flyway owns the schema
+  flyway:
+    enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  task:
+    scheduling:
+      pool:
+        size: 5             # 1 outbox relay + 1 loop per consumer (+1 spare)
+
+payments:
+  supported-currencies: NZD,AUD,USD,GBP,EUR
+  business-zone: Pacific/Auckland
+
+relay:
+  outbox-poll-interval: 500ms
+  delivery-poll-interval: 500ms
+  batch-size: 50
+  max-delivery-attempts: 8
+  initial-backoff: 1s
+  max-backoff: 5m
+  broker:
+    available: true
+
+fraud:
+  provider:
+    base-url: ${FRAUD_PROVIDER_BASE_URL:http://localhost:${server.port}}
+    api-key: ${FRAUD_PROVIDER_API_KEY:local-dev-key}
+    connect-timeout: 2s
+    read-timeout: 3s
+  stub:
+    enabled: ${FRAUD_STUB_ENABLED:true}
+    failure-rate: ${FRAUD_STUB_FAILURE_RATE:0.3}
+    slow-rate: ${FRAUD_STUB_SLOW_RATE:0.1}
+    slow-delay: ${FRAUD_STUB_SLOW_DELAY:5s}
+
+simulation:
+  enabled: ${SIMULATION_ENABLED:true}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
