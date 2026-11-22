@@ -13,7 +13,7 @@ public record PaymentResponse(
         String status,
         String sourceAccount,
         CreatePaymentRequest.Destination destination,
-        // Serialised as a JSON string so clients (esp. JavaScript) never turn it into a float.
+        // sent as a JSON string so clients (JavaScript especially) never turn it into a float
         @JsonFormat(shape = JsonFormat.Shape.STRING) BigDecimal amount,
         String currency,
         String reference,

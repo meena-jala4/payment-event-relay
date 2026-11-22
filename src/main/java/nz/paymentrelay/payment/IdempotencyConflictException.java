@@ -1,6 +1,6 @@
 package nz.paymentrelay.payment;
 
-/** Same Idempotency-Key re-used with a different request body: almost certainly a client bug, so we refuse. */
+/** Same Idempotency-Key sent with a different request body. Most likely a client bug, so we refuse it. */
 public class IdempotencyConflictException extends RuntimeException {
 
     public IdempotencyConflictException(String key) {

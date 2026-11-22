@@ -25,7 +25,7 @@ public class Payment {
     private String destinationName;
     private String destinationAccount;
 
-    /** Money = BigDecimal amount + ISO-4217 currency. Never double/float. */
+    /** Money is a BigDecimal amount plus an ISO 4217 currency. Never double or float. */
     @Column(precision = 19, scale = 4)
     private BigDecimal amount;
     private String currency;
@@ -39,7 +39,7 @@ public class Payment {
     private FraudDecision fraudDecision;
     @Column(precision = 5, scale = 2)
     private BigDecimal fraudRiskScore;
-    private String fraudReasons; // JSON array, kept simple for the exercise
+    private String fraudReasons; // JSON array, kept simple for this exercise
     private Instant fraudCheckedAt;
 
     private Instant createdAt;
@@ -48,7 +48,7 @@ public class Payment {
     private Long version; // null => Spring Data treats the entity as new (persist, not merge). Optimistic locking: two consumers updating the same row can't silently overwrite
 
     protected Payment() {
-        // for JPA
+        // needed by JPA
     }
 
     public Payment(String id, String idempotencyKey, String requestHash, String sourceAccount,

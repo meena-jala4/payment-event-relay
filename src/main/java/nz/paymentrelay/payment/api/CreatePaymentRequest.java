@@ -10,8 +10,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * Structural validation lives here (annotations). Rules that need config or the clock
- * (supported currency, minor units, date not in past) live in {@link nz.paymentrelay.payment.PaymentValidator}.
+ * Shape validation is done here with annotations. Rules that need config or the clock (supported
+ * currency, decimal places, date not in the past) are in {@link nz.paymentrelay.payment.PaymentValidator}.
  */
 public record CreatePaymentRequest(
         @NotBlank @Pattern(regexp = AccountNumbers.NZ_FORMAT, message = AccountNumbers.NZ_FORMAT_MESSAGE)
@@ -20,7 +20,7 @@ public record CreatePaymentRequest(
         @NotNull @Valid
         Destination destination,
 
-        // BigDecimal is parsed exactly from the JSON text ("100.10" or 100.10) - no binary floating point involved.
+        // BigDecimal is parsed straight from the JSON text ("100.10" or 100.10), so no floating point is involved
         @NotNull @Positive
         BigDecimal amount,
 

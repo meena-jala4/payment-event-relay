@@ -34,8 +34,8 @@ public class PaymentController {
     }
 
     /**
-     * Idempotency-Key is REQUIRED: mobile channels retry on flaky networks, and the key is how a retry
-     * is recognised as "the same payment" instead of a second payment.
+     * Idempotency-Key is required. Mobile apps retry on bad networks, and the key is how we know a
+     * retry is the same payment and not a second one.
      */
     @PostMapping
     public ResponseEntity<PaymentResponse> create(
@@ -50,7 +50,7 @@ public class PaymentController {
         if (result.created()) {
             return ResponseEntity.created(URI.create("/payments/" + body.id())).body(body);
         }
-        // Replay of an earlier, identical request: same payment back, nothing created.
+        // same request as an earlier one: give back the same payment, create nothing
         return ResponseEntity.status(HttpStatus.OK).header("Idempotent-Replayed", "true").body(body);
     }
 
@@ -66,7 +66,7 @@ public class PaymentController {
                         p.getFraudRiskScore(), reasons(p.getFraudReasons()), p.getFraudCheckedAt());
         return new PaymentResponse(p.getId(), p.getStatus().name(), p.getSourceAccount(),
                 new CreatePaymentRequest.Destination(p.getDestinationName(), p.getDestinationAccount()),
-                // DB keeps 4dp; show the currency's minor units (NZD 2dp). Exact: input was validated to fit.
+                // DB stores 4 decimal places; show the currency's own (NZD = 2). Exact, because input was already validated
                 p.getAmount().setScale(Currency.getInstance(p.getCurrency()).getDefaultFractionDigits(), RoundingMode.UNNECESSARY),
                 p.getCurrency(), p.getReference(), p.getExecutionDate(), p.getCreatedAt(), fraud);
     }

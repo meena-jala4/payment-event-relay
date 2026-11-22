@@ -46,7 +46,7 @@ public class OutboxEvent {
         this.lastError = null;
     }
 
-    /** Outbox rows never give up: an accepted payment MUST eventually be published. We alert on age instead. */
+    /** Outbox rows never give up, because an accepted payment has to be published eventually. We'd alert on how old they get. */
     public void recordFailure(String error, Instant nextAttempt) {
         this.attempts++;
         this.lastError = truncate(error);

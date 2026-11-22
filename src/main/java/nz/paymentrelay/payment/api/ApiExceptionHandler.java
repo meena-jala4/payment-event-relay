@@ -18,10 +18,10 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
- * Every error is an RFC 7807 application/problem+json body with a stable "type" and,
- * for validation, a per-field "errors" list a channel can map straight onto its form.
+ * Every error comes back as RFC 7807 application/problem+json with a fixed "type". Validation
+ * errors also get a per-field "errors" list that a client can show next to its form fields.
  * Extending ResponseEntityExceptionHandler gives consistent 400s for malformed JSON, bad dates,
- * missing headers etc. for free.
+ * missing headers and so on without extra code.
  */
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {

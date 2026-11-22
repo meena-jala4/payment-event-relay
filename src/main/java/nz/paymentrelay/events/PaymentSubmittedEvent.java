@@ -6,8 +6,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 /**
- * Published once per accepted payment. eventId is stable across redeliveries, which is what
- * lets every consumer de-duplicate.
+ * Published once for each accepted payment. The eventId stays the same on redelivery, which is
+ * what lets every consumer spot duplicates.
  */
 public record PaymentSubmittedEvent(
         String eventId,

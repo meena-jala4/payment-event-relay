@@ -9,7 +9,7 @@ import nz.paymentrelay.config.PaymentProperties;
 import nz.paymentrelay.payment.api.CreatePaymentRequest;
 import org.springframework.stereotype.Component;
 
-/** Business rules that annotations can't express on their own because they depend on config or time. */
+/** Business rules the annotations can't cover, because they depend on config or the current time. */
 @Component
 public class PaymentValidator {
 
@@ -28,14 +28,14 @@ public class PaymentValidator {
         if (!properties.supportedCurrencies().contains(currency)) {
             violations.add(new FieldViolation("currency", "unsupported currency; supported: " + properties.supportedCurrencies()));
         } else {
-            // NZD has 2 minor digits, JPY has 0: reject 10.001 NZD rather than silently rounding someone's money.
+            // NZD has 2 decimal places, JPY has 0. Reject 10.001 NZD instead of quietly rounding the customer's money
             int minorUnits = Currency.getInstance(currency).getDefaultFractionDigits();
             if (request.amount().stripTrailingZeros().scale() > minorUnits) {
                 violations.add(new FieldViolation("amount", "must have at most " + minorUnits + " decimal places for " + currency));
             }
         }
 
-        // "Today" is judged in the bank's business time zone (NZ), not the server's (UTC in a container).
+        // "today" is the NZ date, not the server's date (a container runs in UTC)
         LocalDate today = LocalDate.now(clock.withZone(properties.businessZone()));
         if (request.requestedExecutionDate().isBefore(today)) {
             violations.add(new FieldViolation("requestedExecutionDate", "must not be in the past (today is " + today + ")"));

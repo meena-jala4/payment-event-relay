@@ -42,7 +42,7 @@ public class PaymentService {
         this.clock = clock;
     }
 
-    /** Result tells the controller whether to answer 201 (new) or 200 (idempotent replay). */
+    /** Tells the controller whether to answer 201 (new payment) or 200 (repeat of an earlier request). */
     public record SubmitResult(Payment payment, boolean created) {
     }
 
@@ -58,7 +58,7 @@ public class PaymentService {
             Payment created = tx.execute(status -> createWithOutbox(idempotencyKey, hash, request));
             return new SubmitResult(created, true);
         } catch (DataIntegrityViolationException race) {
-            // Two retries of the same request raced; the unique constraint let exactly one win.
+            // two retries of the same request arrived together; the unique constraint let only one through
             log.info("Concurrent submission for idempotency key {}, returning the winner", idempotencyKey);
             Payment winner = payments.findByIdempotencyKey(idempotencyKey).orElseThrow(() -> race);
             return replay(winner, idempotencyKey, hash);
@@ -77,9 +77,9 @@ public class PaymentService {
     }
 
     /**
-     * THE key reliability decision: the payment row and its outbox event are written in ONE local
-     * transaction. Either both exist or neither does, so an accepted payment can never lose its event,
-     * whatever happens to the broker or this process afterwards.
+     * The important reliability decision: the payment row and its outbox event are written in one
+     * local transaction. Either both exist or neither does, so an accepted payment can't lose its
+     * event, whatever happens to the broker or this process afterwards.
      */
     private Payment createWithOutbox(String key, String hash, CreatePaymentRequest r) {
         Instant now = clock.instant();
@@ -94,13 +94,13 @@ public class PaymentService {
                 r.destination().name(), r.destination().accountNumber(), r.amount(),
                 r.currency().toUpperCase(), r.reference(), r.requestedExecutionDate(), now);
         outbox.save(new OutboxEvent(eventId, paymentId, PaymentSubmittedEvent.TYPE, toJson(event), now));
-        payments.flush(); // surface a unique-key race here, inside the transaction
+        payments.flush(); // make a unique-key clash show up here, inside the transaction
 
         log.info("Accepted payment {} (event {})", paymentId, eventId);
         return payment;
     }
 
-    /** Canonical form so that 100.5 and 100.50 count as the same request. */
+    /** Normalised form, so 100.5 and 100.50 count as the same request. */
     private static String hash(CreatePaymentRequest r) {
         String canonical = String.join("|",
                 r.sourceAccount(), r.destination().name(), r.destination().accountNumber(),

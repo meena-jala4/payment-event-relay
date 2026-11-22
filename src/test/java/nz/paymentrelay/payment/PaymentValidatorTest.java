@@ -16,14 +16,14 @@ import org.junit.jupiter.api.Test;
 
 class PaymentValidatorTest {
 
-    // 2026-11-20T12:00Z is already 2026-11-21 01:00 in Auckland (UTC+13).
+    // 12:00 UTC on the 20th is already 01:00 on the 21st in Auckland (UTC+13)
     private final Clock clock = Clock.fixed(Instant.parse("2026-11-20T12:00:00Z"), ZoneOffset.UTC);
     private final PaymentValidator validator = new PaymentValidator(
             new PaymentProperties(Set.of("NZD", "JPY"), ZoneId.of("Pacific/Auckland")), clock);
 
     @Test
     void todayIsJudgedInNewZealandTimeNotServerUtc() {
-        // In UTC it's still the 20th, but for an NZ customer the 20th is yesterday.
+        // still the 20th in UTC, but for someone in NZ the 20th is already yesterday
         assertThatThrownBy(() -> validator.validate(request("10.00", "NZD", LocalDate.of(2026, 11, 20))))
                 .isInstanceOf(PaymentValidationException.class);
         assertThatCode(() -> validator.validate(request("10.00", "NZD", LocalDate.of(2026, 11, 21))))
@@ -33,7 +33,7 @@ class PaymentValidatorTest {
     @Test
     void minorUnitsDependOnCurrency() {
         assertThatThrownBy(() -> validator.validate(request("10.5", "JPY", LocalDate.of(2026, 12, 1))))
-                .isInstanceOf(PaymentValidationException.class); // yen has no cents
+                .isInstanceOf(PaymentValidationException.class); // yen has no decimals
         assertThatCode(() -> validator.validate(request("1050", "JPY", LocalDate.of(2026, 12, 1))))
                 .doesNotThrowAnyException();
         assertThatCode(() -> validator.validate(request("10.50000", "NZD", LocalDate.of(2026, 12, 1))))
