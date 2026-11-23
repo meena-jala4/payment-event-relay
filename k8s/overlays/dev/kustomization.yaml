@@ -1,0 +1,61 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: payments-dev
+resources:
+  - ../../base
+labels:
+  - pairs:
+      environment: dev
+    includeSelectors: false
+images:
+  - name: registry.example.com/payments/payment-event-relay
+    newTag: dev-latest          # Jenkins sets the real tag: kustomize edit set image ...:<git-sha>
+patches:
+  - target:
+      kind: ConfigMap
+      name: payment-event-relay-config
+    patch: |-
+      - op: replace
+        path: /data/DB_URL
+        value: "jdbc:postgresql://payments-db.payments-dev:5432/payments"
+      - op: replace
+        path: /data/FRAUD_STUB_ENABLED
+        value: "true"            # dev talks to the built-in stub...
+      - op: replace
+        path: /data/FRAUD_PROVIDER_BASE_URL
+        value: "http://localhost:8080"   # ...which lives in the same pod
+      - op: replace
+        path: /data/SIMULATION_ENABLED
+        value: "true"            # outage switches available for testing
+      - op: replace
+        path: /data/LOGGING_LEVEL_NZ_PAYMENTRELAY
+        value: "DEBUG"
+  - target:
+      kind: Deployment
+      name: payment-event-relay
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: { cpu: 100m, memory: 384Mi }
+          limits: { cpu: 500m, memory: 512Mi }
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: payment-event-relay
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2
+  - target:
+      kind: PodDisruptionBudget
+      name: payment-event-relay
+    patch: |-
+      - op: replace
+        path: /spec/minAvailable
+        value: 0                 # single replica in dev: allow drains

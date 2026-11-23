@@ -1,0 +1,21 @@
+# Non-sensitive configuration only. Keys are env-var style; Spring Boot's relaxed binding maps
+# FRAUD_PROVIDER_READ_TIMEOUT -> fraud.provider.read-timeout, etc.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payment-event-relay-config
+  labels:
+    app.kubernetes.io/name: payment-event-relay
+data:
+  DB_URL: "jdbc:postgresql://payments-db:5432/payments"
+  FRAUD_PROVIDER_BASE_URL: "https://fraud-sandbox.vendor.example"
+  FRAUD_PROVIDER_CONNECT_TIMEOUT: "2s"
+  FRAUD_PROVIDER_READ_TIMEOUT: "3s"
+  FRAUD_STUB_ENABLED: "false"
+  SIMULATION_ENABLED: "false"
+  RELAY_MAX_DELIVERY_ATTEMPTS: "8"
+  RELAY_INITIAL_BACKOFF: "1s"
+  RELAY_MAX_BACKOFF: "5m"
+  RELAY_BATCH_SIZE: "50"
+  PAYMENTS_SUPPORTED_CURRENCIES: "NZD,AUD,USD,GBP,EUR"
+  LOGGING_LEVEL_NZ_PAYMENTRELAY: "INFO"

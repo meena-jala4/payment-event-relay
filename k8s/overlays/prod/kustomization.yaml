@@ -1,0 +1,58 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: payments-prod
+resources:
+  - ../../base
+labels:
+  - pairs:
+      environment: prod
+    includeSelectors: false
+images:
+  - name: registry.example.com/payments/payment-event-relay
+    newTag: "0.1.0"             # prod only ever runs an immutable tag that already passed dev
+patches:
+  - target:
+      kind: ConfigMap
+      name: payment-event-relay-config
+    patch: |-
+      - op: replace
+        path: /data/DB_URL
+        value: "jdbc:postgresql://payments-db.payments-prod:5432/payments?sslmode=require"
+      - op: replace
+        path: /data/FRAUD_PROVIDER_BASE_URL
+        value: "https://fraud.vendor.example"   # the REAL provider - only config changes, no code
+      - op: replace
+        path: /data/FRAUD_PROVIDER_READ_TIMEOUT
+        value: "2s"
+  - target:
+      kind: Deployment
+      name: payment-event-relay
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: { cpu: 500m, memory: 768Mi }
+          limits: { cpu: "2", memory: 1Gi }
+      - op: replace
+        path: /spec/template/spec/topologySpreadConstraints/0/whenUnsatisfiable
+        value: DoNotSchedule     # prod must survive losing an availability zone
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: payment-event-relay
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+      - op: replace
+        path: /spec/maxReplicas
+        value: 10
+  - target:
+      kind: PodDisruptionBudget
+      name: payment-event-relay
+    patch: |-
+      - op: replace
+        path: /spec/minAvailable
+        value: 2

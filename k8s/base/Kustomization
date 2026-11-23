@@ -1,0 +1,14 @@
+# Named "Kustomization" (no .yaml extension) on purpose: kustomize accepts this file name, and
+# `kubectl apply -f k8s/base/` only reads *.yaml/*.yml/*.json - so BOTH of these work:
+#   kubectl apply --dry-run=client -f k8s/base/
+#   kubectl apply --dry-run=client -k k8s/overlays/<env>
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - serviceaccount.yaml
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - hpa.yaml
+  - pdb.yaml
+  - networkpolicy.yaml

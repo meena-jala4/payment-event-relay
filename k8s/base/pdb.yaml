@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: payment-event-relay
+  labels:
+    app.kubernetes.io/name: payment-event-relay
+spec:
+  minAvailable: 1   # node drains/upgrades can never take every replica down at once
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: payment-event-relay
